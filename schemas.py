@@ -2,21 +2,43 @@ from pydantic import BaseModel
 from datetime import date
 
 class Car(BaseModel):
-    id : int 
     brand : str 
     title : str 
-    date : date
+    dateofcreation : date
+    price : int
     owner : int 
+    manager : int
     
     class Config:
         orm_mode = True
     
+class Manager(BaseModel):
+    name : str
+    surname : str
+    fee : float
+    sellchance : float
+
+    class Config:
+        orm_mode = True
+
+class Insurance(BaseModel):
+    description : str
+    expiredate : date
+
+    class Config:
+        orm_mode = True
+
+class InsuranceList(BaseModel):
+    car : int
+    insurance : int
+
+    class Config:
+        orm_mode = True
+
 class Owner(BaseModel):
-    id : int
     name : str
     surname : str
     email : str
-    date : date
 
     class Config:
         orm_mode = True
