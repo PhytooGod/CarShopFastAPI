@@ -1,17 +1,47 @@
-from fastapi import FastAPI, status, HTTPException
-from schemas import Car, Owner, Manager, Insurance, InsuranceList
+from fastapi import FastAPI, status, HTTPException, Depends
+from schemas import Car, Owner, Manager, Insurance, InsuranceList, User, UserLogin
 from datetime import datetime
 from core.db import SessionLocal
-from typing import List
+from typing import List, Optional
 import owner.models as ownermodels
 import CarShop.models as carmodels
 import manager.models as managermodels
 import insurance.models as insurancemodels
 import insurancelist.models as insurancelistmodels
+import user.models as usermodels
+from authentication.jwt_handler import signJWT
+from authentication.jwt_bearer import jwtBearer
 
 app = FastAPI()
 db = SessionLocal()
 
+@app.post('/user/signup')
+def user_signup(user: User):
+    new_user = usermodels.User(
+        username = user.username,
+        password = user.password,
+        email = user.email,
+        date = datetime.today()
+    )   
+
+    db.add(new_user)
+    db.commit()
+
+    return signJWT(new_user.username)
+
+def check_user(userlogin: UserLogin):
+    if db.query(usermodels.User).filter(usermodels.User.username==userlogin.username and usermodels.User.password == userlogin.password).first() is None:
+        return False
+    return True 
+
+@app.post('/user/login')
+def user_login(userlogin: UserLogin):
+    if check_user(userlogin):
+        return signJWT(userlogin.username)
+    else:
+        return {
+            "error":"Invalid login details"
+        }
 
 @app.get('/cars', response_model=List[Car], status_code=200)
 def get_all_cars():
@@ -91,7 +121,7 @@ def get_owner(pk:int):
     owner=db.query(ownermodels.Owner).filter(ownermodels.Owner.id==pk).first()
     return owner
 
-@app.post('/owners', response_model=Owner, status_code=status.HTTP_201_CREATED)
+@app.post('/owners', dependencies=[Depends(jwtBearer())],response_model=Owner, status_code=status.HTTP_201_CREATED)
 def add_owner(owner:Owner):
     new_owner = ownermodels.Owner(
         name = owner.name,
@@ -127,7 +157,6 @@ def delete_owner(pk: int):
     
     db.delete(owner_to_delete)
     db.commit()
-
     return owner_to_delete
 
 

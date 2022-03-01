@@ -1,6 +1,15 @@
 from pydantic import BaseModel  
 from datetime import date
 
+class UserLogin(BaseModel):
+    username : str
+    password : str
+
+class User(BaseModel):
+    username : str
+    password : str
+    email : str
+
 class Car(BaseModel):
     brand : str 
     title : str 
@@ -42,3 +51,6 @@ class Owner(BaseModel):
 
     class Config:
         orm_mode = True
+    
+class Token(BaseModel):
+    access_token : str
